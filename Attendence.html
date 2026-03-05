@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attendance Scanner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body{
+font-family:Arial;
+text-align:center;
+margin-top:40px;
+}
+#reader{
+width:300px;
+margin:auto;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Barcode Attendance Scanner</h2>
+
+<div id="reader"></div>
+
+<p id="status">Waiting for scan...</p>
+
+<script>
+
+const ESP32_IP = "192.168.1.14";
+
+function onScanSuccess(decodedText) {
+
+document.getElementById("status").innerHTML =
+"Scanned: " + decodedText;
+
+fetch("http://" + ESP32_IP + "/scan?data=" + decodedText)
+.then(res => res.text())
+.then(data => {
+
+document.getElementById("status").innerHTML = data;
+
+});
+
+}
+
+let scanner = new Html5QrcodeScanner(
+"reader",
+{ fps:10, qrbox:250 }
+);
+
+scanner.render(onScanSuccess);
+
+</script>
+
+</body>
+</html>
