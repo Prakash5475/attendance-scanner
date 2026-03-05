@@ -2,21 +2,28 @@
 <html>
 <head>
 
-<title>Barcode Attendance Scanner</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barcode Attendance Scanner</title>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 
 <style>
+
 body{
 font-family: Arial;
 text-align:center;
-margin-top:40px;
+margin-top:20px;
 }
 
-#reader{
-width:300px;
+#scanner{
+width:100%;
+max-width:400px;
 margin:auto;
+}
+
+#status{
+margin-top:20px;
+font-size:18px;
 }
 
 </style>
@@ -25,9 +32,9 @@ margin:auto;
 
 <body>
 
-<h2>Scan Student Barcode</h2>
+<h2>Barcode Attendance Scanner</h2>
 
-<div id="reader"></div>
+<div id="scanner"></div>
 
 <p id="status">Waiting for scan...</p>
 
@@ -35,12 +42,38 @@ margin:auto;
 
 const ESP32_IP = "192.168.1.14";
 
-function onScanSuccess(decodedText) {
+Quagga.init({
+inputStream: {
+name: "Live",
+type: "LiveStream",
+target: document.querySelector('#scanner'),
+constraints: {
+facingMode: "environment"
+}
+},
+decoder: {
+readers: [
+"code_128_reader",
+"ean_reader",
+"code_39_reader"
+]
+}
+}, function(err) {
+if (err) {
+console.log(err);
+return;
+}
+Quagga.start();
+});
+
+Quagga.onDetected(function(result) {
+
+let code = result.codeResult.code;
 
 document.getElementById("status").innerHTML =
-"Scanned: " + decodedText;
+"Scanned: " + code;
 
-fetch("http://" + ESP32_IP + "/scan?data=" + decodedText)
+fetch("http://" + ESP32_IP + "/scan?data=" + code)
 .then(res => res.text())
 .then(data => {
 
@@ -48,27 +81,10 @@ document.getElementById("status").innerHTML = data;
 
 });
 
-}
-
-let scanner = new Html5QrcodeScanner(
-"reader",
-{
-fps:10,
-qrbox:{width:250,height:120},
-
-formatsToSupport:[
-Html5QrcodeSupportedFormats.CODE_128,
-Html5QrcodeSupportedFormats.CODE_39,
-Html5QrcodeSupportedFormats.EAN_13,
-Html5QrcodeSupportedFormats.EAN_8,
-Html5QrcodeSupportedFormats.UPC_A
-]
-}
-);
-
-scanner.render(onScanSuccess);
+});
 
 </script>
 
 </body>
+
 </html>
